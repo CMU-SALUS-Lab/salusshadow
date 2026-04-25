@@ -849,6 +849,7 @@ def query_point_shade(
             bldgs_raw = bldgs_raw.set_crs("EPSG:4326", allow_override=True)
         bldgs_raw = bldgs_raw.to_crs(utm_crs)
         bldgs = bldgs_raw[bldgs_raw.geometry.type.isin(["Polygon", "MultiPolygon"])].copy()
+        print(f"[DEBUG] bldgs fetched: {len(bldgs)} polygons")
         bldgs["H"] = [
             estimate_building_height(attrs)
             for attrs in bldgs.drop(columns="geometry").to_dict(orient="records")
@@ -928,7 +929,8 @@ def query_point_shade(
             # sindex.nearest returns a list of arrays e.g. [array([0]), array([14])]
             # Flatten to a single integer row index
             raw = nearest_pos[0]
-            row_idx = int(raw.flat[0]) if hasattr(raw, "flat") else int(raw)
+            # row_idx = int(raw.flat[0]) if hasattr(raw, "flat") else int(raw)
+            row_idx = int(nearest_pos[1].flat[0]) # The actual road index is in nearest_pos[1].
             nearest_row = roads_utm.iloc[row_idx]
             print(f"[DEBUG] nearest_row index: {row_idx}")
             print(f"[DEBUG] nearest_row keys: {list(nearest_row.index)}")
