@@ -87,29 +87,43 @@ async def get_mapillary(
 ):
     """
     Proxy Mapillary image lookup server-side to avoid browser CORS restrictions.
-    Tries increasing search radii (100m → 250m → 500m) until images are found.
+    Uses v4 bbox search with increasing radius until images are found.
     Returns { data: [ { id, thumb_256_url, captured_at }, ... ] }
     """
+    import math
+
     fields = "id,thumb_256_url,captured_at"
 
     async with httpx.AsyncClient(timeout=10.0) as client:
-        for radius in [100, 250, 500]:
+        # Try increasing bounding boxes: ~100m, ~250m, ~500m
+        for radius_m in [100, 250, 500]:
+            # Convert metres to degrees (approximate)
+            d_lat = radius_m / 111_320.0
+            d_lon = radius_m / (111_320.0 * math.cos(math.radians(lat)))
+            west  = lon - d_lon
+            south = lat - d_lat
+            east  = lon + d_lon
+            north = lat + d_lat
+            bbox  = f"{west},{south},{east},{north}"
+
             url = (
                 f"https://graph.mapillary.com/images"
                 f"?access_token={MAPILLARY_TOKEN}"
                 f"&fields={fields}"
-                f"&closeto={lon},{lat}"
-                f"&radius={radius}"
+                f"&bbox={bbox}"
                 f"&limit=2"
             )
             try:
                 r = await client.get(url)
+                print(f"[DEBUG] Mapillary status={r.status_code} radius={radius_m}m bbox={bbox}")
                 if r.status_code == 200:
                     data = r.json().get("data", [])
                     if data:
-                        return {"data": data, "radius_used": radius}
+                        return {"data": data, "radius_used": radius_m}
+                else:
+                    print(f"[DEBUG] Mapillary error body: {r.text[:300]}")
             except Exception as e:
-                print(f"[DEBUG] Mapillary fetch failed at radius {radius}: {e}")
+                print(f"[DEBUG] Mapillary fetch failed at radius {radius_m}: {e}")
                 continue
 
     return {"data": [], "radius_used": None}
