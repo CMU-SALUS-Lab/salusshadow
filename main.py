@@ -3,7 +3,7 @@ SalusShadow API — FastAPI wrapper for query_point_shade()
 Deploy to Render / Railway / Hugging Face Spaces.
 
 Install deps:
-    pip install fastapi uvicorn salusshadow osmnx pvlib geopandas shapely rasterio
+    pip install fastapi uvicorn httpx salusshadow osmnx pvlib geopandas shapely rasterio
 
 Run locally:
     uvicorn main:app --reload --port 8000
@@ -13,8 +13,12 @@ from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timezone
 import traceback
+import httpx
 
 import salusshadow  # your salusshadow.py must be in the same directory
+
+# Mapillary token — proxied server-side to avoid browser CORS blocks
+MAPILLARY_TOKEN = "MLY|24137344532569728|c3975960ec08fefe128244f36290a00f"
 
 app = FastAPI(
     title="SalusShadow API",
@@ -74,3 +78,38 @@ def get_shade(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/mapillary")
+async def get_mapillary(
+    lat: float = Query(..., description="Latitude"),
+    lon: float = Query(..., description="Longitude"),
+):
+    """
+    Proxy Mapillary image lookup server-side to avoid browser CORS restrictions.
+    Tries increasing search radii (100m → 250m → 500m) until images are found.
+    Returns { data: [ { id, thumb_256_url, captured_at }, ... ] }
+    """
+    fields = "id,thumb_256_url,captured_at"
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        for radius in [100, 250, 500]:
+            url = (
+                f"https://graph.mapillary.com/images"
+                f"?access_token={MAPILLARY_TOKEN}"
+                f"&fields={fields}"
+                f"&closeto={lon},{lat}"
+                f"&radius={radius}"
+                f"&limit=2"
+            )
+            try:
+                r = await client.get(url)
+                if r.status_code == 200:
+                    data = r.json().get("data", [])
+                    if data:
+                        return {"data": data, "radius_used": radius}
+            except Exception as e:
+                print(f"[DEBUG] Mapillary fetch failed at radius {radius}: {e}")
+                continue
+
+    return {"data": [], "radius_used": None}
