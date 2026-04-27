@@ -12,10 +12,7 @@ Compute which sidewalks are in shade, score shade potential across a neighborhoo
 
 ## What it does
 
-SalusShadow casts shadows from buildings (and optionally trees) onto sidewalks using real sun angles, then measures how much of each street segment is shaded. It operates at two scales:
-
-- **Point query** — Is this exact spot in shade right now? (used by the web app)
-- **Full pipeline** — Score every sidewalk in a neighborhood, export to GeoPackage for QGIS
+SalusShadow casts shadows from buildings (and optionally trees) onto sidewalks using real sun angles, then measures how much of each street segment is shaded.
 
 Shadow geometry is computed from OSM building footprints + estimated heights, solar position from [pvlib](https://pvlib-python.readthedocs.io/), and street networks from [OSMnx](https://osmnx.readthedocs.io/).
 
