@@ -6,6 +6,8 @@ Compute which sidewalks are in shade, score shade potential across a neighborhoo
 🌐 **[Live Demo →](https://cmu-salus-lab.github.io/salusshadow/)**  
 📡 **[API →](https://salusshadow-api.onrender.com/)**
 
+![SalusShadow app screenshot](docs/screenshot.png)
+
 ---
 
 ## What it does
@@ -16,6 +18,18 @@ SalusShadow casts shadows from buildings (and optionally trees) onto sidewalks u
 - **Full pipeline** — Score every sidewalk in a neighborhood, export to GeoPackage for QGIS
 
 Shadow geometry is computed from OSM building footprints + estimated heights, solar position from [pvlib](https://pvlib-python.readthedocs.io/), and street networks from [OSMnx](https://osmnx.readthedocs.io/).
+
+---
+
+## Quick start (web app)
+
+1. Open **[cmu-salus-lab.github.io/salusshadow](https://cmu-salus-lab.github.io/salusshadow/)**
+2. Click anywhere on the map or drag the pin to your location of interest
+3. Pick a **date and time** using the datetime picker
+4. Hit **"Check shade"** — results appear in ~5–15 seconds
+5. See whether the spot is ☀️ in sun or 🌑 in shade, the street shadow ratio, sun azimuth/elevation, and street-level imagery from Mapillary
+
+> **Note:** The first request after a period of inactivity may take ~30 seconds (Render free tier cold start). Subsequent requests are fast.
 
 ---
 
