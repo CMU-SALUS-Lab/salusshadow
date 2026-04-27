@@ -630,11 +630,14 @@ async function checkShade() {
   if (!dtLocal) return showError("Pick a date & time.");
   if (!apiBase) return showError("Enter your API URL.");
 
+  // Build ISO timestamp from the LOCAL datetime string directly — do NOT
+  // call .toISOString() which converts to UTC first and corrupts the hour.
   const dt = new Date(dtLocal);
   const offset = -dt.getTimezoneOffset();
   const sign = offset >= 0 ? '+' : '-';
   const pad = n => String(Math.abs(n)).padStart(2, '0');
-  const isoTs = dt.toISOString().slice(0, 19)
+  // dtLocal is already "YYYY-MM-DDTHH:mm" in local time — just append the offset
+  const isoTs = dtLocal + ':00'
     + sign + pad(Math.floor(Math.abs(offset)/60)) + ':' + pad(Math.abs(offset) % 60);
 
   const url = `${apiBase}/shade?lat=${lat}&lon=${lon}&timestamp=${encodeURIComponent(isoTs)}&include_trees=${trees}&search_radius_m=${radius}`;
